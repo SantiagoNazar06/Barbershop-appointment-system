@@ -1,9 +1,9 @@
 # ============================
 # Maven / Build
 # ============================
-BS/target/
-BS/HELP.md
-BS/.mvn/wrapper/maven-wrapper.jar
+target/
+HELP.md
+.mvn/wrapper/maven-wrapper.jar
 *.jar
 *.war
 *.ear
@@ -22,12 +22,6 @@ BS/.mvn/wrapper/maven-wrapper.jar
 *.iws
 *.ipr
 .idea_modules/
-
-# ============================
-# IDE - VS Code
-# ============================
-.vscode/
-
 # ============================
 # IDE - Eclipse / STS
 # ============================
@@ -39,12 +33,6 @@ BS/.mvn/wrapper/maven-wrapper.jar
 .springBeans
 .sts4-cache
 bin/
-
-# ============================
-# IDE - Metals (Scala)
-# ============================
-.metals/
-
 # ============================
 # IDE - NetBeans
 # ============================
