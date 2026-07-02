@@ -1,0 +1,119 @@
+name: Bulk create project issues
+
+# Este workflow crea automáticamente todas las issues definidas en issues.json
+# dentro de ESTE MISMO repositorio, sin necesidad de instalar GitHub CLI
+# localmente ni de generar un token manualmente.
+#
+# Cómo usarlo:
+#   1. Subí este repo (o al menos la carpeta .github/workflows y issues.json)
+#      a tu repositorio de GitHub.
+#   2. Andá a la pestaña "Actions" del repositorio.
+#   3. Seleccioná el workflow "Bulk create project issues".
+#   4. Click en "Run workflow" (botón a la derecha).
+#   5. Esperá a que termine: vas a ver las issues creadas en la pestaña "Issues".
+#
+# Nota: se ejecuta solo manualmente (workflow_dispatch) para evitar crear
+# issues duplicadas por accidente en cada push.
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmar:
+        description: 'Escribí "SI" para confirmar la creación masiva de issues'
+        required: true
+        default: "NO"
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  create-issues:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verificar confirmación
+        if: ${{ github.event.inputs.confirmar != 'SI' }}
+        run: |
+          echo "No se confirmó la ejecución (se esperaba 'SI'). Abortando sin crear issues."
+          exit 1
+
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+
+      - name: Crear labels e issues desde issues.json
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const issues = JSON.parse(fs.readFileSync('issues.json', 'utf8'));
+
+            const labelColors = {
+              "epic:setup": "0E8A16",
+              "epic:data-model": "1D76DB",
+              "epic:auth": "D93F0B",
+              "epic:superadmin": "5319E7",
+              "epic:config-local": "FBCA04",
+              "epic:public-booking": "B60205",
+              "epic:messaging": "0052CC",
+              "epic:agenda": "0E8A16",
+              "epic:stats": "C2E0C6",
+              "epic:frontend-admin": "BFD4F2",
+              "epic:frontend-public": "BFDADC",
+              "epic:qa": "FEF2C0",
+              "epic:deploy": "D4C5F9",
+              "backend": "006B75",
+              "frontend": "1D76DB",
+              "infra": "5319E7",
+              "security": "B60205",
+              "ci-cd": "0E8A16",
+              "testing": "FBCA04",
+              "docs": "C5DEF5",
+              "size:XS": "C2E0C6",
+              "size:S": "BFD4F2",
+              "size:M": "FBCA04",
+              "size:L": "D93F0B"
+            };
+
+            // Recolectar labels únicas
+            const allLabels = new Set();
+            issues.forEach(i => i.labels.forEach(l => allLabels.add(l)));
+
+            // Traer labels existentes
+            const existing = await github.paginate(github.rest.issues.listLabelsForRepo, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100
+            });
+            const existingNames = new Set(existing.map(l => l.name));
+
+            for (const label of allLabels) {
+              if (!existingNames.has(label)) {
+                try {
+                  await github.rest.issues.createLabel({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    name: label,
+                    color: labelColors[label] || "EDEDED"
+                  });
+                  console.log(`Label creada: ${label}`);
+                } catch (e) {
+                  console.log(`No se pudo crear la label ${label}: ${e.message}`);
+                }
+              }
+            }
+
+            // Crear issues
+            let count = 0;
+            for (const issue of issues) {
+              count++;
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: issue.title,
+                body: issue.body,
+                labels: issue.labels
+              });
+              console.log(`[${count}/${issues.length}] Issue creada: ${issue.title}`);
+            }
+
+            console.log(`Listo. Se crearon ${issues.length} issues.`);

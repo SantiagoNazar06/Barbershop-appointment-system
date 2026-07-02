@@ -1,0 +1,460 @@
+[
+  {
+    "title": "#1 - Setup inicial del repositorio backend (Spring Boot)",
+    "labels": [
+      "epic:setup",
+      "backend",
+      "size:S"
+    ],
+    "body": "**Descripción:** Inicializar el proyecto Spring Boot con las dependencias base: Web, Data JPA, Security, Validation, PostgreSQL Driver, Lombok. Definir estructura de paquetes por capas (controller, service, repository, dto, entity, config, exception).\n\n**Criterios de aceptación:**\n- [ ] Proyecto levanta localmente con `./mvnw spring-boot:run`.\n- [ ] Health check básico (`GET /actuator/health`) responde 200.\n- [ ] `application.yml` con perfiles `dev` y `prod` separados.\n\n**Referencia:** SRS sección 6 (Stack tecnológico)."
+  },
+  {
+    "title": "#2 - Setup inicial del repositorio frontend (React + Vite + pnpm)",
+    "labels": [
+      "epic:setup",
+      "frontend",
+      "size:S"
+    ],
+    "body": "**Descripción:** Inicializar proyecto React con Vite, gestionado con pnpm (SPA pura, sin Next.js ni SSR). Instalar TypeScript, ESLint, Prettier y React Router para el ruteo client-side, separando rutas públicas (/b/:slug, /ticket/:token) de rutas privadas (/admin/**).\n\n**Criterios de aceptación:**\n- [ ] Proyecto corre con `pnpm dev`.\n- [ ] `pnpm-lock.yaml` versionado en el repo (no package-lock.json ni yarn.lock).\n- [ ] React Router configurado con al menos las rutas base (/b/:slug, /ticket/:token, /admin/login, /admin/agenda).\n- [ ] Configurado un cliente HTTP base apuntando a la API por variable de entorno (import.meta.env.VITE_API_URL)."
+  },
+  {
+    "title": "#3 - Configurar Docker Compose para entorno local",
+    "labels": [
+      "epic:setup",
+      "infra",
+      "size:S"
+    ],
+    "body": "**Descripción:** Crear `docker-compose.yml` con servicios: postgres, rabbitmq (con panel de administración habilitado), y opcionalmente el backend dockerizado.\n\n**Criterios de aceptación:**\n- [ ] `docker compose up` levanta Postgres y RabbitMQ accesibles desde el backend local.\n- [ ] Variables de entorno documentadas en `.env.example`."
+  },
+  {
+    "title": "#4 - CI: build y test del backend (GitHub Actions)",
+    "labels": [
+      "epic:setup",
+      "ci-cd",
+      "size:XS"
+    ],
+    "body": "**Descripción:** Workflow que en cada PR compile el backend y corra los tests unitarios.\n\n**Criterios de aceptación:**\n- [ ] Workflow falla si algún test rompe.\n- [ ] Badge de estado agregado al README."
+  },
+  {
+    "title": "#5 - CI: build y lint del frontend (GitHub Actions)",
+    "labels": [
+      "epic:setup",
+      "ci-cd",
+      "size:XS"
+    ],
+    "body": "**Descripción:** Workflow que en cada PR instale dependencias con pnpm (usando pnpm/action-setup), compile el frontend (pnpm build) y corra el linter (pnpm lint).\n\n**Criterios de aceptación:**\n- [ ] Workflow falla ante errores de lint o de build.\n- [ ] Cache de pnpm configurado en el workflow para acelerar builds sucesivos."
+  },
+  {
+    "title": "#6 - Entidad Tenant + migración",
+    "labels": [
+      "epic:data-model",
+      "backend",
+      "size:S"
+    ],
+    "body": "**Descripción:** Crear la entidad Tenant según el modelo del SRS (sección 4): nombre, slug (único), dirección, teléfono, estadoSuscripcion, duracionTurnoMinutos, precioDefault. Generar migración con Flyway.\n\n**Criterios de aceptación:**\n- [ ] Constraint de unicidad en `slug`.\n- [ ] Test de repositorio que persiste y recupera un Tenant."
+  },
+  {
+    "title": "#7 - Entidad Usuario + migración",
+    "labels": [
+      "epic:data-model",
+      "backend",
+      "size:S"
+    ],
+    "body": "**Descripción:** Entidad Usuario con relación opcional a Tenant (null para SUPERADMIN), campo password_hash, enum rol.\n\n**Criterios de aceptación:**\n- [ ] Constraint de unicidad en `email`.\n- [ ] Password nunca se serializa en respuestas JSON."
+  },
+  {
+    "title": "#8 - Entidad Turno + migración",
+    "labels": [
+      "epic:data-model",
+      "backend",
+      "size:M"
+    ],
+    "body": "**Descripción:** Entidad Turno con relación a Tenant: nombreCliente, dniCliente, horario, estado (enum), precioCobrado, tokenTicket (UUID único).\n\n**Criterios de aceptación:**\n- [ ] Constraint único compuesto (tenant_id, horario) para estados activos (RESERVADO, ATENDIDO) — previene doble reserva a nivel de base de datos.\n- [ ] Índice por tenant_id + horario para performance de consultas de agenda."
+  },
+  {
+    "title": "#9 - Entidad TurnoHistorialEstado (auditoría)",
+    "labels": [
+      "epic:data-model",
+      "backend",
+      "size:S"
+    ],
+    "body": "**Descripción:** Entidad de auditoría que registra cada cambio de estado de un turno, con referencia al usuario que lo realizó.\n\n**Criterios de aceptación:**\n- [ ] Se inserta automáticamente un registro cada vez que cambia el estado de un Turno."
+  },
+  {
+    "title": "#10 - Entidades HorarioAtencion y Bloqueo",
+    "labels": [
+      "epic:data-model",
+      "backend",
+      "size:S"
+    ],
+    "body": "**Descripción:** Modelar horarios de apertura/cierre por día de semana y bloqueos puntuales (feriados/ausencias), asociados a Tenant.\n\n**Criterios de aceptación:**\n- [ ] Un tenant puede tener hasta 7 registros de HorarioAtencion (uno por día).\n- [ ] Bloqueo soporta rango de fecha/hora con motivo opcional."
+  },
+  {
+    "title": "#11 - Configurar Flyway y estrategia de migraciones",
+    "labels": [
+      "epic:data-model",
+      "backend",
+      "size:XS"
+    ],
+    "body": "**Descripción:** Configurar Flyway como manejador de versionado de esquema, con convención de nombres V{n}__descripcion.sql.\n\n**Criterios de aceptación:**\n- [ ] Las migraciones corren automáticamente al iniciar la app en dev.\n- [ ] Documentado el proceso para agregar nuevas migraciones en el README."
+  },
+  {
+    "title": "#12 - Login con JWT",
+    "labels": [
+      "epic:auth",
+      "backend",
+      "security",
+      "size:M"
+    ],
+    "body": "**Descripción:** Implementar `POST /auth/login` según el contrato de API. Generación de JWT firmado, con claims tenantId y rol incluidos en el token.\n\n**Criterios de aceptación:**\n- [ ] Login exitoso devuelve token válido por el tiempo configurado.\n- [ ] Login con tenant suspendido devuelve 403.\n- [ ] Tests unitarios de generación/validación del token.\n\n**Referencia:** RF-02.1, RF-02.2"
+  },
+  {
+    "title": "#13 - Recuperación y reseteo de contraseña",
+    "labels": [
+      "epic:auth",
+      "backend",
+      "size:S"
+    ],
+    "body": "**Descripción:** Implementar `POST /auth/forgot-password` y `POST /auth/reset-password`, con tokens de recuperación de un solo uso y expiración corta (ej. 30 min).\n\n**Criterios de aceptación:**\n- [ ] Respuesta genérica en forgot-password (no revela si el email existe).\n- [ ] Token de reseteo expira e invalida tras el primer uso.\n\n**Referencia:** RF-02.3"
+  },
+  {
+    "title": "#14 - Filtro de aislamiento multi-tenant",
+    "labels": [
+      "epic:auth",
+      "backend",
+      "security",
+      "size:M"
+    ],
+    "body": "**Descripción:** Implementar un mecanismo que extraiga el tenantId del JWT y lo aplique automáticamente como filtro obligatorio en todas las queries de endpoints ADMIN_LOCAL.\n\n**Criterios de aceptación:**\n- [ ] Test que verifica que un ADMIN_LOCAL del tenant A no puede leer datos del tenant B ni manipulando IDs en la URL.\n\n**Referencia:** RF-02.5, RNF-04"
+  },
+  {
+    "title": "#15 - Configuración de roles en Spring Security",
+    "labels": [
+      "epic:auth",
+      "backend",
+      "security",
+      "size:S"
+    ],
+    "body": "**Descripción:** Configurar las reglas de autorización por rol para cada grupo de endpoints (/admin/** → SUPERADMIN, /barberia/** → ADMIN_LOCAL, /public/** → sin auth).\n\n**Criterios de aceptación:**\n- [ ] Acceso no autorizado devuelve 401/403 según corresponda, con el formato de error estándar del contrato."
+  },
+  {
+    "title": "#16 - Endpoint: crear tenant + usuario admin inicial",
+    "labels": [
+      "epic:superadmin",
+      "backend",
+      "size:S"
+    ],
+    "body": "**Descripción:** Implementar `POST /admin/tenants` según contrato, generando el slug automáticamente a partir del nombre (con manejo de colisiones).\n\n**Criterios de aceptación:**\n- [ ] Slug generado es único y URL-safe.\n- [ ] Se crea en una única transacción el Tenant y su Usuario admin inicial.\n\n**Referencia:** RF-01.1, RF-01.4"
+  },
+  {
+    "title": "#17 - Endpoint: listar tenants con filtros y paginación",
+    "labels": [
+      "epic:superadmin",
+      "backend",
+      "size:XS"
+    ],
+    "body": "**Descripción:** Implementar `GET /admin/tenants` con filtro por estado y paginación estándar.\n\n**Referencia:** RF-01.3"
+  },
+  {
+    "title": "#18 - Endpoint: cambiar estado de suscripción",
+    "labels": [
+      "epic:superadmin",
+      "backend",
+      "size:S"
+    ],
+    "body": "**Descripción:** Implementar `PATCH /admin/tenants/{id}/estado`. Debe bloquear nuevos logins del tenant si se suspende.\n\n**Referencia:** RF-01.2"
+  },
+  {
+    "title": "#19 - Endpoint: obtener y actualizar configuración",
+    "labels": [
+      "epic:config-local",
+      "backend",
+      "size:S"
+    ],
+    "body": "**Descripción:** Implementar `GET/PUT /barberia/configuracion` según contrato, incluyendo el sub-recurso de horarios por día.\n\n**Referencia:** RF-03.1, RF-03.2, RF-03.3, RF-03.5"
+  },
+  {
+    "title": "#20 - Endpoint: gestión de bloqueos (feriados/ausencias)",
+    "labels": [
+      "epic:config-local",
+      "backend",
+      "size:S"
+    ],
+    "body": "**Descripción:** Implementar CRUD de bloqueos (POST, GET, DELETE /barberia/bloqueos).\n\n**Criterios de aceptación:**\n- [ ] Un bloqueo activo excluye automáticamente esos horarios del cálculo de disponibilidad.\n\n**Referencia:** RF-03.4"
+  },
+  {
+    "title": "#21 - Validaciones de configuración",
+    "labels": [
+      "epic:config-local",
+      "backend",
+      "size:XS"
+    ],
+    "body": "**Descripción:** Validar reglas de negocio al guardar configuración: horario de cierre posterior al de apertura, duración de turno > 0, precio default >= 0."
+  },
+  {
+    "title": "#22 - Endpoint: info pública de la barbería",
+    "labels": [
+      "epic:public-booking",
+      "backend",
+      "size:XS"
+    ],
+    "body": "**Descripción:** Implementar `GET /public/tenants/{slug}` sin autenticación, devolviendo solo datos públicos.\n\n**Referencia:** RF-04.1"
+  },
+  {
+    "title": "#23 - Algoritmo de cálculo de slots disponibles",
+    "labels": [
+      "epic:public-booking",
+      "backend",
+      "size:M"
+    ],
+    "body": "**Descripción:** Implementar el servicio que, dado un tenant y una fecha, calcula los horarios disponibles combinando HorarioAtencion, Bloqueo y Turnos ya reservados/atendidos.\n\n**Criterios de aceptación:**\n- [ ] Cubierto con tests unitarios de casos borde: día sin horario configurado, día completamente bloqueado, día con algunos turnos ya tomados.\n\n**Referencia:** RF-04.2, RF-04.3"
+  },
+  {
+    "title": "#24 - Endpoint: reservar turno con control de concurrencia",
+    "labels": [
+      "epic:public-booking",
+      "backend",
+      "size:L"
+    ],
+    "body": "**Descripción:** Implementar `POST /public/tenants/{slug}/turnos`. Debe apoyarse en el constraint único de base de datos y capturar la excepción de violación para devolver 409 de forma controlada.\n\n**Criterios de aceptación:**\n- [ ] Test de concurrencia: dos requests simultáneos al mismo slot, solo uno debe tener éxito.\n- [ ] Valida DNI (formato) y límite de turnos activos por DNI si está configurado.\n\n**Referencia:** RF-05"
+  },
+  {
+    "title": "#25 - Endpoint: consultar/descargar ticket",
+    "labels": [
+      "epic:public-booking",
+      "backend",
+      "size:S"
+    ],
+    "body": "**Descripción:** Implementar `GET /public/tickets/{token}` según contrato, incluyendo el flag ticketPdfDisponible.\n\n**Referencia:** RF-06.3, RF-06.4"
+  },
+  {
+    "title": "#26 - Endpoint: cancelar turno (cliente final)",
+    "labels": [
+      "epic:public-booking",
+      "backend",
+      "size:XS"
+    ],
+    "body": "**Descripción:** Implementar `DELETE /public/tickets/{token}`, solo válido para turnos en estado RESERVADO y con horario futuro."
+  },
+  {
+    "title": "#27 - Configurar RabbitMQ: exchange, colas y DLQ",
+    "labels": [
+      "epic:messaging",
+      "backend",
+      "infra",
+      "size:S"
+    ],
+    "body": "**Descripción:** Definir el exchange turnos.exchange, la cola turno.reservado.queue y su correspondiente Dead Letter Queue para eventos que fallen tras reintentos.\n\n**Criterios de aceptación:**\n- [ ] Documentado el esquema de mensajería en el README del backend."
+  },
+  {
+    "title": "#28 - Publicar evento TurnoReservado",
+    "labels": [
+      "epic:messaging",
+      "backend",
+      "size:XS"
+    ],
+    "body": "**Descripción:** Al confirmar exitosamente una reserva, publicar un evento TurnoReservado con el turnoId a la cola correspondiente."
+  },
+  {
+    "title": "#29 - Worker: generación de PDF del ticket",
+    "labels": [
+      "epic:messaging",
+      "backend",
+      "size:M"
+    ],
+    "body": "**Descripción:** Implementar el consumidor que, al recibir TurnoReservado, genera el PDF con los datos del turno usando Apache PDFBox o iText.\n\n**Criterios de aceptación:**\n- [ ] PDF incluye: Nombre, DNI, N° turno, horario, demora estimada, nombre de barbería.\n- [ ] Ante error de generación, el mensaje va a la DLQ y se loguea para revisión manual.\n\n**Referencia:** RF-06.1, RF-06.2"
+  },
+  {
+    "title": "#30 - Almacenamiento de PDFs generados",
+    "labels": [
+      "epic:messaging",
+      "backend",
+      "infra",
+      "size:S"
+    ],
+    "body": "**Descripción:** Definir y configurar el almacenamiento de los PDFs (bucket S3-compatible o filesystem persistente).\n\n**Criterios de aceptación:**\n- [ ] URL del PDF accesible públicamente mediante un identificador no adivinable."
+  },
+  {
+    "title": "#31 - Actualizar estado ticketPdfDisponible",
+    "labels": [
+      "epic:messaging",
+      "backend",
+      "size:XS"
+    ],
+    "body": "**Descripción:** Tras generar y almacenar el PDF, actualizar el turno para que GET /public/tickets/{token} refleje ticketPdfDisponible: true y la URL final."
+  },
+  {
+    "title": "#32 - Endpoint: listar agenda del día",
+    "labels": [
+      "epic:agenda",
+      "backend",
+      "size:S"
+    ],
+    "body": "**Descripción:** Implementar `GET /barberia/turnos?fecha=` según contrato, ordenado cronológicamente.\n\n**Referencia:** RF-07.1"
+  },
+  {
+    "title": "#33 - Endpoint: marcar turno como atendido",
+    "labels": [
+      "epic:agenda",
+      "backend",
+      "size:S"
+    ],
+    "body": "**Descripción:** Implementar `PATCH /barberia/turnos/{id}/atender`, con precio cobrado opcional (default del tenant si no se envía). Debe registrar auditoría.\n\n**Referencia:** RF-07.2"
+  },
+  {
+    "title": "#34 - Endpoint: marcar turno como ausente",
+    "labels": [
+      "epic:agenda",
+      "backend",
+      "size:XS"
+    ],
+    "body": "**Descripción:** Implementar `PATCH /barberia/turnos/{id}/ausente`.\n\n**Referencia:** RF-07.3"
+  },
+  {
+    "title": "#35 - Endpoint: cancelar turno desde el panel",
+    "labels": [
+      "epic:agenda",
+      "backend",
+      "size:XS"
+    ],
+    "body": "**Descripción:** Implementar `PATCH /barberia/turnos/{id}/cancelar` con motivo opcional.\n\n**Referencia:** RF-07.4"
+  },
+  {
+    "title": "#36 - Actualización en tiempo real de la agenda",
+    "labels": [
+      "epic:agenda",
+      "backend",
+      "frontend",
+      "size:S"
+    ],
+    "body": "**Descripción:** Definir mecanismo de refresco de la agenda ante nuevas reservas: para el MVP, polling corto (cada 10-15s) es suficiente; documentar como mejora futura la migración a WebSocket/STOMP.\n\n**Criterios de aceptación:**\n- [ ] La agenda del dueño refleja una nueva reserva externa sin necesidad de recargar manualmente la página.\n\n**Referencia:** RF-07.6"
+  },
+  {
+    "title": "#37 - Endpoint: resumen diario",
+    "labels": [
+      "epic:stats",
+      "backend",
+      "size:S"
+    ],
+    "body": "**Descripción:** Implementar `GET /barberia/estadisticas/resumen-diario` con cortes realizados, recaudación total, ausentes, cancelados, pendientes.\n\n**Referencia:** RF-08.1, RF-08.2"
+  },
+  {
+    "title": "#38 - Endpoint: estadísticas por rango de fechas",
+    "labels": [
+      "epic:stats",
+      "backend",
+      "size:M"
+    ],
+    "body": "**Descripción:** Implementar `GET /barberia/estadisticas` con tasa de ausentismo y días de mayor demanda.\n\n**Referencia:** RF-08.3, RF-08.4"
+  },
+  {
+    "title": "#39 - Pantalla de login",
+    "labels": [
+      "epic:frontend-admin",
+      "frontend",
+      "size:S"
+    ],
+    "body": "**Descripción:** Formulario de login, manejo de token JWT, redirección según rol."
+  },
+  {
+    "title": "#40 - Dashboard: agenda del día",
+    "labels": [
+      "epic:frontend-admin",
+      "frontend",
+      "size:M"
+    ],
+    "body": "**Descripción:** Vista principal del dueño con la lista de turnos del día, acciones rápidas (atender/ausente/cancelar) y resumen de recaudación en vivo."
+  },
+  {
+    "title": "#41 - Formulario de configuración de barbería",
+    "labels": [
+      "epic:frontend-admin",
+      "frontend",
+      "size:M"
+    ],
+    "body": "**Descripción:** Pantalla para editar horarios por día, duración de turno y precio default."
+  },
+  {
+    "title": "#42 - Gestión de bloqueos desde el panel",
+    "labels": [
+      "epic:frontend-admin",
+      "frontend",
+      "size:S"
+    ],
+    "body": "**Descripción:** CRUD visual de bloqueos (feriados/ausencias) con selector de fecha/hora."
+  },
+  {
+    "title": "#43 - Pantalla de estadísticas",
+    "labels": [
+      "epic:frontend-admin",
+      "frontend",
+      "size:M"
+    ],
+    "body": "**Descripción:** Vista con resumen diario y gráfico simple de recaudación/cortes por rango de fechas."
+  },
+  {
+    "title": "#44 - Página pública de la barbería",
+    "labels": [
+      "epic:frontend-public",
+      "frontend",
+      "size:S"
+    ],
+    "body": "**Descripción:** Ruta /b/:slug (React Router) con datos de la barbería y selector de fecha."
+  },
+  {
+    "title": "#45 - Selector de disponibilidad y formulario de reserva",
+    "labels": [
+      "epic:frontend-public",
+      "frontend",
+      "size:M"
+    ],
+    "body": "**Descripción:** Grilla de horarios disponibles/no disponibles, formulario de nombre y DNI, confirmación de reserva.\n\n**Criterios de aceptación:**\n- [ ] Flujo completo en menos de 3 pasos, sin login (RNF-01)."
+  },
+  {
+    "title": "#46 - Pantalla de ticket digital",
+    "labels": [
+      "epic:frontend-public",
+      "frontend",
+      "size:S"
+    ],
+    "body": "**Descripción:** Ruta /ticket/:token que muestra el estado del turno y permite descargar el PDF una vez disponible (con manejo del estado \"generando...\")."
+  },
+  {
+    "title": "#47 - Tests unitarios de servicios core del backend",
+    "labels": [
+      "epic:qa",
+      "backend",
+      "testing",
+      "size:M"
+    ],
+    "body": "**Descripción:** Cobertura de tests unitarios sobre los services de reserva, cálculo de disponibilidad y agenda."
+  },
+  {
+    "title": "#48 - Tests de integración: reserva bajo concurrencia",
+    "labels": [
+      "epic:qa",
+      "backend",
+      "testing",
+      "size:M"
+    ],
+    "body": "**Descripción:** Test de integración (Testcontainers con Postgres real) que simule reservas simultáneas sobre el mismo slot, validando que solo una tenga éxito."
+  },
+  {
+    "title": "#49 - Deploy inicial en Railway/Render",
+    "labels": [
+      "epic:deploy",
+      "infra",
+      "size:M"
+    ],
+    "body": "**Descripción:** Configurar el despliegue del backend, frontend (build estático de Vite) y base de datos en el proveedor elegido para el piloto, con variables de entorno de producción."
+  },
+  {
+    "title": "#50 - Documentación del proyecto (README + variables de entorno)",
+    "labels": [
+      "epic:deploy",
+      "docs",
+      "size:S"
+    ],
+    "body": "**Descripción:** README con instrucciones de setup local (incluyendo uso de pnpm), variables de entorno necesarias, y guía de despliegue."
+  }
+]
