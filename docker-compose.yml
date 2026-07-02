@@ -1,0 +1,87 @@
+# ============================================
+# Barbershop Appointment System — Docker Compose
+# ============================================
+# Uso básico (solo infraestructura):
+#   docker compose up -d
+#
+# Con backend dockerizado:
+#   docker compose --profile with-backend up -d
+# ============================================
+
+services:
+  # --- PostgreSQL -----------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: barbershop-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-barbershop}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-barbershop}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # --- RabbitMQ -------------------------------------
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: barbershop-rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672"     # AMQP
+      - "15672:15672"   # Management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-guest}
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # --- Backend (opcional) ---------------------------
+  backend:
+    profiles:
+      - with-backend
+    build:
+      context: ./BS
+      dockerfile: Dockerfile
+    container_name: barbershop-backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+      DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-barbershop}
+      DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
+      DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_DEFAULT_USER:-guest}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_DEFAULT_PASS:-guest}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - app-network
+
+volumes:
+  postgres_data:
+    name: barbershop-postgres-data
+
+networks:
+  app-network:
+    name: barbershop-network
+    driver: bridge
