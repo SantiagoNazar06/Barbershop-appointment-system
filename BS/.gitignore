@@ -1,0 +1,77 @@
+# ============================
+# Maven / Build
+# ============================
+target/
+HELP.md
+.mvn/wrapper/maven-wrapper.jar
+*.jar
+*.war
+*.ear
+*.log
+
+# ============================
+# Maven Wrapper (track scripts, not binary)
+# ============================
+BS/.mvn/wrapper/maven-wrapper.jar
+
+# ============================
+# IDE - IntelliJ IDEA
+# ============================
+.idea/
+*.iml
+*.iws
+*.ipr
+.idea_modules/
+# ============================
+# IDE - Eclipse / STS
+# ============================
+.classpath
+.project
+.settings/
+.apt_generated
+.factorypath
+.springBeans
+.sts4-cache
+bin/
+# ============================
+# IDE - NetBeans
+# ============================
+nbproject/private/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+build/
+
+# ============================
+# Environment / Secrets
+# ============================
+.env
+.env.local
+.env.*.local
+
+# ============================
+# OS files
+# ============================
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# ============================
+# Windows NTFS alternate data streams
+# ============================
+*:Zone.Identifier
+
+# ============================
+# Logs
+# ============================
+*.log
+logs/
+
+# ============================
+# Temp files
+# ============================
+*.tmp
+*.temp

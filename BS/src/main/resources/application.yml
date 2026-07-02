@@ -1,0 +1,72 @@
+spring:
+  application:
+    name: barbershop-appointment-system
+
+  # Default profile: H2 en memoria — funciona sin dependencias externas
+  security:
+    user:
+      name: admin
+      password: admin
+
+  datasource:
+    url: jdbc:h2:mem:barbershop
+    driver-class-name: org.h2.Driver
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        format_sql: true
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when-authorized
+
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+  security:
+    user:
+      name: admin
+      password: admin
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/barbershop
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+  datasource:
+    url: ${DATASOURCE_URL}
+    username: ${DATASOURCE_USERNAME}
+    password: ${DATASOURCE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
